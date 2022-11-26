@@ -15,6 +15,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using CERTENROLLLib;
 
 namespace X509CertificateGenerator
@@ -28,13 +29,26 @@ namespace X509CertificateGenerator
             var cert = req.CreateSelfSigned(DateTimeOffset.Now, DateTimeOffset.Now.AddYears(5));
 
             // Create PFX (PKCS #12) with private key
-            File.WriteAllBytes(@"C:\Users\UserName\Documents\SelfSignedCert\mycert.pfx", cert.Export(X509ContentType.Pfx, "password"));
 
-            // Create Base 64 encoded CER (public key only)
-            File.WriteAllText(@"C:\Users\UserName\Documents\SelfSignedCert\mycert.cer",
-                "-----BEGIN CERTIFICATE-----\r\n"
-                + Convert.ToBase64String(cert.Export(X509ContentType.Cert), Base64FormattingOptions.InsertLineBreaks)
-                + "\r\n-----END CERTIFICATE-----");
+            using (SaveFileDialog ofd = new SaveFileDialog())
+            {
+                ofd.Filter = "pfx file|*.pfx";
+                ofd.FilterIndex = 1;
+                ofd.RestoreDirectory = true;
+
+                if(DialogResult.OK == ofd.ShowDialog())
+                {
+                    File.WriteAllBytes(//@"C:\Users\UserName\Documents\SelfSignedCert\mycert.pfx",
+                        ofd.FileName, cert.Export(X509ContentType.Pfx, "password"));
+
+                    // Create Base 64 encoded CER (public key only)
+                    File.WriteAllText(//@"C:\Users\UserName\Documents\SelfSignedCert\mycert.cer",
+                        ofd.FileName + ".cer",
+                        "-----BEGIN CERTIFICATE-----\r\n"
+                        + Convert.ToBase64String(cert.Export(X509ContentType.Cert), Base64FormattingOptions.InsertLineBreaks)
+                        + "\r\n-----END CERTIFICATE-----");
+                }
+            }
         }
         //public static X509Certificate2 CreateSelfSignedCertificate(string subjectName)
         //{
@@ -96,6 +110,7 @@ namespace X509CertificateGenerator
         //        System.Security.Cryptography.X509Certificates.X509KeyStorageFlags.Exportable
         //    );
         //}
+        [STAThread]
         static void Main(string[] args)
         {
             MakeCert();
